@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block breadcrumb %}{% trans "Pending submissions" %}{% endblock %}
+
+{% block extra_head %}
+<link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}css/ui.tabs.outside.css" />
+<link media="screen" href="{{ STATIC_URL }}css/tablesorter.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="{{ STATIC_URL }}js/tablesorted.js"></script>
+<script type="text/javascript">
+    $(document).ready(function(){
+        $(".tablesorter_resource").tablesorter();
+    });
+
+    validate_submission = function(id) {
+        $.ajax({
+            url: '/submissions/validate/'+ id +'/',
+            type: 'GET',
+            complete : function(xmlhttpreq, textStatus) {
+                if (textStatus=='success'){
+                    $('#submission_'+id+' td:last-child').text('validated');
+                }
+            }
+        });
+    }
+</script>
+<style>
+    div#body {
+        padding: 0.5em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<table class="stat_table_font stats_table highlighted tablesorter_resource" style="clear:both;margin-top:0.5em;width:100%">
+  <thead>
+  <tr>
+    <th class="header"><span class="i16 tag">{% trans "Resource" %}</span></th>
+    <th class="header"><span class="i16 comment">{% trans "Language" %}</span></th>
+    <th class="header"><span class="i16 comment">{% trans "Old string" %}</span></th>
+    <th class="header"><span class="i16 comment">{% trans "New string" %}</span></th>
+    <th class="header"><span class="i16 maintainer">{% trans "User" %}</span></th>
+    <th class="header"><span class="i16 clock">{% trans "Date" %}</span></th>
+    <th class="header"><span class="i16">{% trans "State" %}</span></th>
+   </tr>
+  </thead>
+  <tbody id="submissions">
+    {% for submission in submissions %}
+    <tr id="submission_{{ submission.pk }}">
+        <td><a class="res_tipsy_enable" style="font-weight:bold" href="{{ submission.tx_resource.get_absolute_url }}">{{ submission.tx_resource }}</a></td>
+        <td>{{ submission.tx_language }}</td>
+        <td>{{ submission.old_string }}</td>
+        <td>{{ submission.tx_translation.string }}</td>
+        <td>{{ submission.tx_translation.user }}</td>
+        <td>{{ submission.tx_added }}</td>
+        <td>
+        {% if validation %}
+            {% if perms.txsubmissions.change_vcssubmission %}
+                {% ifequal submission.vcs_state "new" %}<input style="float: right;" type="checkbox" title="{% trans "Validate ?" %}" alt="{% trans "Validate ?" %}" onclick="validate_submission({{ submission.pk }});" />{% endifequal %}
+            {% endif %}
+        {% endif %}
+        {{ submission.vcs_state }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
