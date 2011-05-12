@@ -1,3 +1,12 @@
+"""
+    Transifex submissions
+
+    Admin configuration
+
+    @copyright: 2011 by Jean-Philippe Braun <jpbraun@mandriva.com>
+    @license: GNU GPL, see COPYING for details.
+"""
+
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 

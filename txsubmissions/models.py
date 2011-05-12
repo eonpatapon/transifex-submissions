@@ -1,7 +1,18 @@
+"""
+    Transifex submissions
+
+    The database models
+
+    @copyright: 2011 by Jean-Philippe Braun <jpbraun@mandriva.com>
+    @license: GNU GPL, see COPYING for details.
+"""
+
+
 import os, re
 import codecs
 from subprocess import check_output, CalledProcessError
 from datetime import datetime
+from sets import Set
 
 from django.conf import settings
 from django.db import models
@@ -22,8 +33,8 @@ VCS_BACKENDS = (
     ('Git', 'git'),
     ('Svn', 'svn')
 )
-VCS_CHECKOUT_DIR = "/home/eon/svn/soft/"
 
+VCS_CHECKOUT_DIR = getattr(settings, 'SUBMISSIONS_VCS_CHECKOUT_DIR')
 TX_USER = getattr(settings, 'SUBMISSIONS_TX_USER')
 TX_PASS = getattr(settings, 'SUBMISSIONS_TX_PASS')
 TX_HOST = getattr(settings, 'SUBMISSIONS_TX_HOST')
@@ -141,18 +152,18 @@ class VCSResource(models.Model):
                    '-l', language.code]
         print check_output(command, cwd=self.vcs_project.destdir())
 
-    def commit(self, language):
+    def commit(self, language, submissions):
         """ Commit the PO file in the VCS """
         # guess the file to commit
         language_file = self.vcs_language_map.replace('<lang>', language.code)
         language_file_path = os.path.join(self.vcs_project.destdir(), language_file)
         # get PO header
         header = self.vcs_project.header
-        print header
-        print unicode(header)
-        # get translator history
+        # try update translator history if there is any
         try:
-            history = VCSHistory.objects.get(tx_resource=self.tx_resource, tx_language=language).vcs_history
+            vcs_history = VCSHistory.objects.get(tx_resource=self.tx_resource, tx_language=language)
+            vcs_history.update(Set([ s.tx_translation.user for s in submissions ]))
+            history = vcs_history.vcs_history
         except VCSHistory.DoesNotExist:
             history = ""
         # read the po file contents and remove comments
@@ -161,12 +172,12 @@ class VCSResource(models.Model):
             if not re.match("^#", line):
                 contents = contents + line
         # add header and history
-        contents = unicode(header) + "\n\n" + unicode(history) + "\n\n" + unicode(contents)
+        contents = unicode(header) + "#\n" + unicode(history) + "\n\n" + unicode(contents)
         # write the po file
         po_file = codecs.open(language_file_path, "w", "utf-8")
-        po_file.write(contents)
+        po_file.write(contents.replace("\r\n", "\n"))
         po_file.close()
-
+        # commit the po file
         self.vcs_project.commit(language_file)
 
     class Meta:
@@ -222,6 +233,30 @@ class VCSHistory(models.Model):
     def __unicode__(self):
         return u"History of %s for language %s" % (self.tx_resource, self.tx_language)
 
+    def update(self, translators):
+        """ Update the translator history """
+        current_year = datetime.now().strftime("%Y")
+        current_history = self.vcs_history.split("\n")
+        for translator in translators:
+            exists = False
+            add_year = False
+            # loop over a copy because we might add elements
+            for index, line in enumerate(current_history[:]):
+                # check if the translator is in the history
+                if re.search(translator.email, line):
+                    exists = True
+                    # update the year list if needed
+                    if not re.search(current_year, line):
+                        current_history[index] += ", %s" % current_year
+                    break
+            # add a new translator
+            if not exists:
+                current_history.append("# %s %s <%s>, %s" % (translator.first_name,
+                    translator.last_name, translator.email, current_year))
+        # save the new history
+        self.vcs_history = "\n".join(current_history)
+        self.save()
+
     class Meta:
         verbose_name=_("VCS History")
         verbose_name_plural=_("VCS History")
@@ -229,11 +264,12 @@ class VCSHistory(models.Model):
 
 # Listen to new translations
 def add_submission(sender, **kwargs):
+    """ Add new translations made on Transifex
+        to the VCSSubmission model """
     translation = kwargs['instance']
     try:
-        # check if we need to queue this translation
+        # check if we need to submit this translation
         r = VCSResource.objects.get(tx_resource=translation.source_entity.resource)
-        print "Adding new submission in queue."
         try:
             sub = VCSSubmission.objects.get(tx_translation=translation)
         except VCSSubmission.DoesNotExist:
@@ -242,12 +278,14 @@ def add_submission(sender, **kwargs):
         sub.old_string = Translation.objects.get(pk=translation.pk).string
         sub.save()
     except VCSResource.DoesNotExist:
-        # don't queue the translation
+        # we don't want to the translation
         pass
 pre_save.connect(add_submission, sender=Translation)
 
 
 def default_state():
+    """ Returns the default state that should be used
+        for submitting new translations """
     if TX_VALIDATION:
         return VCS_SUBMISSION_STATES[1][0]
     else:

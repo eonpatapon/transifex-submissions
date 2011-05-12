@@ -1,3 +1,12 @@
+"""
+    Transifex submissions
+
+    Submit new translation to VCS script
+
+    @copyright: 2011 by Jean-Philippe Braun <jpbraun@mandriva.com>
+    @license: GNU GPL, see COPYING for details.
+"""
+
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
 
@@ -39,10 +48,9 @@ class Command(BaseCommand):
             project.init_client()
             project.init_client_resources()
             for language, resources in details.items():
-                print language
                 for resource, submissions in resources.items():
-                    resource.pull(language.code)
-                    resource.commit(language.code)
+                    resource.pull(language)
+                    resource.commit(language, submissions)
                     for submission in submissions:
                         print "Set submission %s state as %s" % \
                             (submission, VCS_SUBMISSION_STATES[2][0])

@@ -1,3 +1,12 @@
+"""
+    Transifex submissions
+
+    Urls
+
+    @copyright: 2011 by Jean-Philippe Braun <jpbraun@mandriva.com>
+    @license: GNU GPL, see COPYING for details.
+"""
+
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('txsubmissions.views',

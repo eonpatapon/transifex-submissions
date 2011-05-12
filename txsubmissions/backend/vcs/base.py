@@ -1,3 +1,12 @@
+"""
+    Transifex submissions
+
+    VCS base backend
+
+    @copyright: 2011 by Jean-Philippe Braun <jpbraun@mandriva.com>
+    @license: GNU GPL, see COPYING for details.
+"""
+
 import os
 from subprocess import check_output, CalledProcessError
 
@@ -15,10 +24,9 @@ class BaseVCS(object):
             self.call(cmd)
 
     def commit(self, *commands):
-        print "Commit file"
+        print "Commit file..."
         for cmd in commands:
-            print cmd
-            #self.call(cmd)
+            self.call(cmd, cwd=self.destdir)
 
     def call(self, command):
         print "Running : %s" % command

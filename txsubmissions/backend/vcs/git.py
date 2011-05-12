@@ -1,5 +1,13 @@
-import os
+"""
+    Transifex submissions
 
+    Git backend
+
+    @copyright: 2011 by Jean-Philippe Braun <jpbraun@mandriva.com>
+    @license: GNU GPL, see COPYING for details.
+"""
+
+import os
 from base import BaseVCS
 
 class GitVCS(BaseVCS):

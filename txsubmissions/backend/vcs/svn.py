@@ -1,5 +1,13 @@
-import os
+"""
+    Transifex submissions
 
+    SVN backend
+
+    @copyright: 2011 by Jean-Philippe Braun <jpbraun@mandriva.com>
+    @license: GNU GPL, see COPYING for details.
+"""
+
+import os
 from base import BaseVCS
 
 class SvnVCS(BaseVCS):
@@ -12,5 +20,5 @@ class SvnVCS(BaseVCS):
         super(SvnVCS, self).checkout(command)
 
     def commit(self, file):
-        command = ["svn", "ci", file, "-m", self.commit_msg ]
-        super(SvnVCS, self).commit(command)
+        commit = ["svn", "ci", file, "-m", self.commit_msg ]
+        super(SvnVCS, self).commit(commit)

@@ -1,0 +1,69 @@
+= Transifex Submissions =
+
+This is a simple django application that integrate Transifex projects with
+their VCS. Git and svn backends are available.
+
+You need the transifex-client package as well as VCS command line tools (git, svn).
+Currently Transifex Submissions uses local checkouts of projects to commit files.
+
+Before commiting PO files to the VCS, Transifex Submissions app will keep track
+of the translator history and build a custom header
+
+== Installation ==
+
+- python setup.py install
+- add txsubmissions in INSTALLED_APPS
+- in Transifex urls.py add:
+    url(r'^submissions/', include('txsubmissions.urls')),
+- ./manage.py syncdb
+
+== Configuration ==
+
+In settings.py the following options are mandatory :
+
+SUBMISSIONS_TX_USER = "manager"
+    A Transifex user that can pull translations from transifex
+SUBMISSIONS_TX_PASS = "password"
+    The user password
+SUBMISSIONS_TX_HOST = "http://transifex.example.com"
+    The Transifex url
+
+Optional options :
+
+SUBMISSIONS_VCS_CHECKOUT_DIR = '/path/to/dir/'
+    The absolute path to the directory where the checkouts lives
+    This is the default path for all VCS projects which can be altered
+
+SUBMISSIONS_TX_VALIDATION = True or False (default)
+    Add a validation step to the workflow
+    New translation must be valided on Transifex Submission url
+    For validating translations, the user must have the txsubmissions.change_vcssubmission
+    permission
+
+SUBMISSIONS_TX_HEADER_TPL
+    The default template for PO files
+    Default template :
+    #
+    # <project>
+    # <description>
+    # Copyright (C) <year> <organization>
+    # This file is distributed under the same license as the <project> package.
+    #
+    This default template can be customized for every project in the django admin
+
+SUBMISSIONS_TX_ORGANIZATION = "SOME ORGANIZATION"
+    The name of the organization that can be used in the header template
+
+== Setup ==
+
+Go in the admin and add VCS projects.
+
+== Submitting new translations to the VCS ==
+
+Use the management command :
+./manage.py submit_translations
+
+The user that runs this command must have access to projects checkouts and
+must have the rights to commit in the VCS.
+
+Currently, only authentication with ssh pubkeys is possible.

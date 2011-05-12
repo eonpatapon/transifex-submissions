@@ -1,3 +1,12 @@
+"""
+    Transifex submissions
+
+    Views
+
+    @copyright: 2011 by Jean-Philippe Braun <jpbraun@mandriva.com>
+    @license: GNU GPL, see COPYING for details.
+"""
+
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponseBadRequest, HttpResponse
