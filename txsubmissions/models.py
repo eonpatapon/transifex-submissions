@@ -1,5 +1,7 @@
-import os
+import os, re
+import codecs
 from subprocess import check_output, CalledProcessError
+from datetime import datetime
 
 from django.conf import settings
 from django.db import models
@@ -26,6 +28,16 @@ TX_USER = getattr(settings, 'SUBMISSIONS_TX_USER')
 TX_PASS = getattr(settings, 'SUBMISSIONS_TX_PASS')
 TX_HOST = getattr(settings, 'SUBMISSIONS_TX_HOST')
 TX_VALIDATION = getattr(settings, 'SUBMISSIONS_TX_VALIDATION', False)
+TX_ORGANIZATION = getattr(settings, 'SUBMISSIONS_TX_ORGANIZATION', '')
+TX_HEADER_TPL = getattr(settings, 'SUBMISSIONS_TX_HEADER_TPL',
+"""
+#
+# <project>
+# <description>
+# Copyright (C) <year> <organization>
+# This file is distributed under the same license as the <project> package.
+#
+""")
 
 class VCSProject(models.Model):
     """ Link a Transifex project to some VCS repo """
@@ -44,6 +56,10 @@ class VCSProject(models.Model):
     vcs_checkout = models.CharField(max_length=255, default=VCS_CHECKOUT_DIR,
         help_text=_("Location of the project's checkout"),
         verbose_name=_("VCS Checkout"))
+    vcs_header = models.TextField(default=TX_HEADER_TPL,
+        blank=True, null=True,
+        help_text=_("Header template for PO files"),
+        verbose_name=_("VCS Header"))
 
     def __unicode__(self):
         return self.tx_project.name
@@ -90,6 +106,15 @@ class VCSProject(models.Model):
                        u"%s" % resource.vcs_language_map ]
             print check_output(command, cwd=self.destdir())
 
+    def get_header(self):
+        """ Return a generated header for the project """
+        header = self.vcs_header
+        header = header.replace('<organization>', TX_ORGANIZATION)
+        header = header.replace('<year>', datetime.now().strftime("%Y"))
+        header = header.replace('<project>', self.tx_project.name)
+        header = header.replace('<description>', self.tx_project.description)
+        return header
+    header = property(get_header)
 
     class Meta:
         verbose_name = _('VCS Project')
@@ -113,12 +138,35 @@ class VCSResource(models.Model):
         """ Pull resource file from Transifex in the selected language """
         command = ['tx', 'pull', '-f', '-r',
                    '%s.%s' % (self.vcs_project.tx_project.slug, self.tx_resource.slug),
-                   '-l', language]
+                   '-l', language.code]
         print check_output(command, cwd=self.vcs_project.destdir())
 
     def commit(self, language):
         """ Commit the PO file in the VCS """
-        language_file = self.vcs_language_map.replace('<lang>', language)
+        # guess the file to commit
+        language_file = self.vcs_language_map.replace('<lang>', language.code)
+        language_file_path = os.path.join(self.vcs_project.destdir(), language_file)
+        # get PO header
+        header = self.vcs_project.header
+        print header
+        print unicode(header)
+        # get translator history
+        try:
+            history = VCSHistory.objects.get(tx_resource=self.tx_resource, tx_language=language).vcs_history
+        except VCSHistory.DoesNotExist:
+            history = ""
+        # read the po file contents and remove comments
+        contents = u""
+        for line in codecs.open(language_file_path, "r", "utf-8"):
+            if not re.match("^#", line):
+                contents = contents + line
+        # add header and history
+        contents = unicode(header) + "\n\n" + unicode(history) + "\n\n" + unicode(contents)
+        # write the po file
+        po_file = codecs.open(language_file_path, "w", "utf-8")
+        po_file.write(contents)
+        po_file.close()
+
         self.vcs_project.commit(language_file)
 
     class Meta:
@@ -161,6 +209,23 @@ class VCSSubmission(models.Model):
         permissions = (
             ("can_view", "Can see available submissions"),
         )
+
+
+class VCSHistory(models.Model):
+    """ Translator history """
+    tx_resource = models.ForeignKey(Resource,
+        verbose_name=_("TX Resource"))
+    tx_language = models.ForeignKey(Language,
+        verbose_name=_("TX Language"))
+    vcs_history = models.TextField(verbose_name=_("VCS History"))
+
+    def __unicode__(self):
+        return u"History of %s for language %s" % (self.tx_resource, self.tx_language)
+
+    class Meta:
+        verbose_name=_("VCS History")
+        verbose_name_plural=_("VCS History")
+
 
 # Listen to new translations
 def add_submission(sender, **kwargs):
