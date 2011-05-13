@@ -89,8 +89,8 @@ class VCSProject(models.Model):
         """ Initialize the VCS backend """
         mod = __import__('txsubmissions.backend.vcs.%s' % \
             self.vcs_backend.lower(), globals(), locals(), ['%sVCS' % \
-            self.vcs_backend])
-        backend = getattr(mod, "%sVCS" % self.vcs_backend)
+            self.vcs_backend.lower().capitalize()])
+        backend = getattr(mod, "%sVCS" % self.vcs_backend.lower().capitalize())
         self.repo = backend(self.vcs_checkout, self.tx_project.slug, self.vcs_url)
 
     def checkout(self):
