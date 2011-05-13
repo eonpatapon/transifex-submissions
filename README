@@ -57,6 +57,14 @@ SUBMISSIONS_ORGANIZATION = "SOME ORGANIZATION"
 == Setup ==
 
 Go in the admin and add VCS projects.
+Once the VCS projects and VCS resources setup run :
+./manage.py init_vcs_project --project <project_name>
+
+To initialize all VCS projects run :
+./manage.py init_vcs_project --all
+
+If a VCS project or its resources are changed in Transifex you need
+tu run the script again
 
 == Submitting new translations to the VCS ==
 
