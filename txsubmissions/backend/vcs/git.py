@@ -13,13 +13,15 @@ from base import BaseVCS
 class GitVCS(BaseVCS):
 
     def checkout(self):
-        if os.path.exists(self.dest_dir):
-            command = ["git", "pull", self.dest_dir]
-        else:
-            command = ["git", "clone", self.repo_url, self.dest_dir]
-        super(GitVCS, self).checkout(command)
+        if not os.path.exists(self.dest_dir):
+            cmd = ["git", "clone", self.repo_url, self.dest_dir]
+            super(GitVCS, self).checkout(cmd)
+
+    def update(self):
+        cmd = ["git", "pull", self.dest_dir]
+        super(GitVCS, self).update(cmd)
 
     def commit(self, file):
-        commit = ["git", "commit", file, "-m", self.commit_msg ]
-        push = ["git", "push"]
-        super(GitVCS, self).commit(commit, push)
+        cmd1 = ["git", "commit", file, "-m", self.commit_msg ]
+        cmd2 = ["git", "push"]
+        super(GitVCS, self).commit(cmd1, cmd2)

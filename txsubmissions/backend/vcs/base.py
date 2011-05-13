@@ -8,7 +8,11 @@
 """
 
 import os
-from subprocess import check_output, CalledProcessError
+import logging
+
+from txsubmissions.utils import RunError, run
+
+log = logging.getLogger('txsubmissions')
 
 class BaseVCS(object):
 
@@ -19,21 +23,24 @@ class BaseVCS(object):
         self.commit_msg = "Transifex update"
 
     def checkout(self, *commands):
-        print "Checkout project in %s" % (self.dest_dir)
+        log.info("Checkout project in %s" % (self.dest_dir))
         for cmd in commands:
-            self.call(cmd)
+            run(cmd)
+
+    def update(self, *commands):
+        log.info("Updating repo %s" % (self.dest_dir))
+        for cmd in commands:
+            run(cmd)
 
     def commit(self, *commands):
-        print "Commit file..."
+        log.info("Commit files")
         for cmd in commands:
-            self.call(cmd, cwd=self.destdir)
+            kwargs = {'cwd': self.dest_dir}
+            try:
+                run(cmd, **kwargs)
+            except RunError, err:
+                log.error(err)
 
-    def call(self, command):
-        print "Running : %s" % command
-        try:
-            print check_output(command)
-        except CalledProcessError:
-            raise VCSError
 
 class VCSError(Exception):
     pass
