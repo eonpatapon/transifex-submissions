@@ -9,8 +9,11 @@
 
 from django.core.management.base import BaseCommand, CommandError
 from optparse import make_option
+import logging
 
 from txsubmissions.models import VCSSubmission, VCS_SUBMISSION_STATES, default_state
+
+log = logging.getLogger('txsubmissions')
 
 class Command(BaseCommand):
     args = '<state>'
@@ -45,15 +48,16 @@ class Command(BaseCommand):
 
         for project, details in to_submit.items():
             project.checkout()
-            project.init_client()
-            project.init_client_resources()
+            project.update()
+            project.init_tx_client()
+            project.init_tx_client_resources()
             for language, resources in details.items():
                 for resource, submissions in resources.items():
                     resource.pull(language)
                     resource.commit(language, submissions)
                     for submission in submissions:
-                        print "Set submission %s state as %s" % \
-                            (submission, VCS_SUBMISSION_STATES[2][0])
+                        log.debug("Set submission %s state as %s" % \
+                            (submission, VCS_SUBMISSION_STATES[2][0]))
                         submission.vcs_state = VCS_SUBMISSION_STATES[2][0]
                         submission.save()
 
