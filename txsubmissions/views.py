@@ -22,29 +22,41 @@ from transifex.languages.models import LanguageManager
 
 @permission_required('txsubmissions.can_view', login_url='/')
 def submissions(request):
+    """ Main view - Manage and view submissions """
 
     q = VCSSubmission.objects.order_by("-tx_added")
 
-    projects = Set([ s.vcs_resource.vcs_project for s in q ])
-    resources = Set([ s.vcs_resource for s in q ])
-    translators = Set([ s.tx_translation.user for s in q ])
+    # init form choices lists base on the submissions lists
+    languages = [('all', _('All languages'))] + \
+        list(Set([ (s.tx_language.code, s.tx_language) for s in q ]))
+    projects = [('all', _('All projects'))] + \
+        list(Set([ (s.tx_project.slug, s.tx_project) for s in q ]))
+    resources = [('all', _('All resources'))] + \
+        list(Set([ (s.tx_resource.slug, s.tx_resource) for s in q ]))
+    translators = [('all', _('All translators'))] + \
+        list(Set([ (s.tx_translator.username, s.tx_translator) for s in q ]))
 
     if not request.GET:
-        data = {'project': 'all', 'resource': 'all', 'translator': 'all', 'state': VCS_SUBMISSION_STATES[0][0]}
+        # send some default values to the form
+        data = {'language': 'all', 'project': 'all', 'resource': 'all',
+            'translator': 'all', 'state': VCS_SUBMISSION_STATES[0][0]}
     else:
+        # send GET values to the form
         data = request.GET
-    form = SubmissionsForm(data)
-    form.fields['project'].choices = [('all', _('All projects'))] + [ (p.tx_project.slug, p) for p in projects ]
-    form.fields['resource'].choices = [('all', _('All resources'))] + [ (r.tx_resource.slug, r) for r in resources ]
-    form.fields['translator'].choices = [('all', _('All translators'))] + [ (t, t) for t in translators ]
+
+    form = SubmissionsForm(data, languages, projects, resources, translators, VCS_SUBMISSION_STATES)
+    # validate form
     if form.is_valid():
         data = form.cleaned_data
+        # filter the query
         if 'project' in data and data['project'] != 'all':
             q = q.filter(vcs_resource__vcs_project__tx_project__slug=data['project'])
         if 'resource' in data and data['resource'] != 'all':
             q = q.filter(vcs_resource__tx_resource__slug=data['resource'])
         if 'translator' in data and data['translator'] != 'all':
             q = q.filter(tx_translation__user__username=data['translator'])
+        if 'language' in data and data['language'] != 'all':
+            q = q.filter(tx_translation__language__code=data['language'])
         q = q.filter(vcs_state=data['state'])
 
     submissions = q
@@ -57,9 +69,10 @@ def submissions(request):
 
 @permission_required('txsubmissions.change_vcssubmission', login_url='/')
 def validate(request, pk):
+    """ Ajax view that validates one submission """
     try:
         s = VCSSubmission.objects.get(pk=pk)
-        s.vcs_state = "validated"
+        s.vcs_state = VCS_SUBMISSION_STATES[1][0]
         s.save()
         return HttpResponse("OK")
     except Exception, err:

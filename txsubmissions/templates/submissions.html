@@ -30,10 +30,17 @@
     }
     #form ul {
         padding-left: 0px;
+        font-size: 90%;
     }
     #form ul li {
         display: inline;
         padding-right: 5px;
+    }
+    #form select {
+        border: 1px solid #AAAAAA;
+        border-radius: 2px 2px 2px 2px;
+        padding: 0 0 0 0.1em;
+        background: white;
     }
 </style>
 {% endblock %}
@@ -72,7 +79,7 @@
                 {% ifequal submission.vcs_state "new" %}<input style="float: right;" type="checkbox" title="{% trans "Validate ?" %}" alt="{% trans "Validate ?" %}" onclick="validate_submission({{ submission.pk }});" />{% endifequal %}
             {% endif %}
         {% endif %}
-        {{ submission.vcs_state }}</td>
+        {{ submission.vcs_state_name }}</td>
     </tr>
     {% endfor %}
   </tbody>

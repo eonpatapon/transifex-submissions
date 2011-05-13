@@ -27,14 +27,14 @@ from transifex.projects.models import Project
 from txsubmissions.utils import RunError, run
 
 VCS_SUBMISSION_STATES = (
-    ('new', 'new'),
-    ('validated', 'validated'),
-    ('commited', 'commited'),
-    ('failed', 'failed')
+    ('new', _('New')),
+    ('validated', _('Validated')),
+    ('commited', _('Submited to VCS')),
+    ('failed', _('Failed'))
 )
 VCS_BACKENDS = (
-    ('Git', 'git'),
-    ('Svn', 'svn')
+    ('git', 'Git'),
+    ('svn', 'Svn')
 )
 
 VCS_CHECKOUT_DIR = getattr(settings, 'SUBMISSIONS_VCS_CHECKOUT_DIR')
@@ -212,17 +212,30 @@ class VCSSubmission(models.Model):
     vcs_resource = models.ForeignKey(VCSResource,
         verbose_name=_("VCS Resource"))
 
-    def tx_project(self):
+    def get_tx_project(self):
         return self.tx_resource.project
-    tx_project.short_description = _("TX Project")
+    get_tx_project.short_description = _("TX Project")
+    tx_project = property(get_tx_project)
 
-    def tx_resource(self):
+    def get_tx_resource(self):
         return self.tx_translation.source_entity.resource
-    tx_resource.short_description = _("TX Resource")
+    get_tx_resource.short_description = _("TX Resource")
+    tx_resource = property(get_tx_resource)
 
-    def tx_language(self):
+    def get_tx_language(self):
         return self.tx_translation.language
-    tx_language.short_description = _("TX Language")
+    get_tx_language.short_description = _("TX Language")
+    tx_language = property(get_tx_language)
+
+    def get_tx_translator(self):
+        return self.tx_translation.user
+    get_tx_translator.short_description = _("TX Translator")
+    tx_translator = property(get_tx_translator)
+
+    def vcs_state_name(self):
+        for state, state_name in VCS_SUBMISSION_STATES:
+            if self.vcs_state == state:
+                return state_name
 
     def __unicode__(self):
         return u"%s (%s - %s)" % (self.vcs_resource, self.tx_translation, self.tx_added)
@@ -230,7 +243,7 @@ class VCSSubmission(models.Model):
     class Meta:
         verbose_name = _('VCS Submission')
         permissions = (
-            ("can_view", "Can see available submissions"),
+            ("can_view", _("Can see available submissions")),
         )
 
 
