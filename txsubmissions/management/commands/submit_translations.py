@@ -7,26 +7,21 @@
     @license: GNU GPL, see COPYING for details.
 """
 
-from django.core.management.base import BaseCommand, CommandError
-from optparse import make_option
 import logging
-
+from optparse import make_option
+from django.core.management.base import BaseCommand, CommandError
 from txsubmissions.models import VCSSubmission, VCS_SUBMISSION_STATES, default_state
 
 log = logging.getLogger('txsubmissions')
 
 class Command(BaseCommand):
-    args = '<state>'
-    help = 'Submit in VCS all translations in the selected state (default: %s)' % \
-        default_state()
+
     option_list = BaseCommand.option_list + (
         make_option('--state',
-            action='store_true',
             dest='state',
             default=default_state(),
-            help='Submit translations with the state'),
+            help='Submit in VCS all translations in the selected state (default: %s)' % default_state(),
     )
-
 
     def handle(self, *args, **options):
 
@@ -47,10 +42,7 @@ class Command(BaseCommand):
             to_submit[project][language][resource].append(submission)
 
         for project, details in to_submit.items():
-            project.checkout()
             project.update()
-            project.init_tx_client()
-            project.init_tx_client_resources()
             for language, resources in details.items():
                 for resource, submissions in resources.items():
                     resource.pull(language)
@@ -60,4 +52,3 @@ class Command(BaseCommand):
                             (submission, VCS_SUBMISSION_STATES[2][0]))
                         submission.vcs_state = VCS_SUBMISSION_STATES[2][0]
                         submission.save()
-
