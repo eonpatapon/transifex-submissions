@@ -18,7 +18,7 @@
             type: 'GET',
             complete : function(xmlhttpreq, textStatus) {
                 if (textStatus=='success'){
-                    $('#submission_'+id+' td:last-child').text('validated');
+                    $('#submission_'+id).remove();
                 }
             }
         });
@@ -28,18 +28,32 @@
     div#body {
         padding: 0.5em;
     }
+    #form ul {
+        padding-left: 0px;
+    }
+    #form ul li {
+        display: inline;
+        padding-right: 5px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+
+<form method="get" action="{% url submissions %}" id="form">
+    <ul>
+        {{ form.as_ul }}
+        <li><input type="submit" value="Filter" /></li>
+    </ul>
+</form>
+
 <table class="stat_table_font stats_table highlighted tablesorter_resource" style="clear:both;margin-top:0.5em;width:100%">
   <thead>
   <tr>
     <th class="header"><span class="i16 tag">{% trans "Resource" %}</span></th>
-    <th class="header"><span class="i16 comment">{% trans "Language" %}</span></th>
     <th class="header"><span class="i16 comment">{% trans "Old string" %}</span></th>
     <th class="header"><span class="i16 comment">{% trans "New string" %}</span></th>
-    <th class="header"><span class="i16 maintainer">{% trans "User" %}</span></th>
+    <th class="header"><span class="i16 maintainer">{% trans "Translator" %}</span></th>
     <th class="header"><span class="i16 clock">{% trans "Date" %}</span></th>
     <th class="header"><span class="i16">{% trans "State" %}</span></th>
    </tr>
@@ -48,7 +62,6 @@
     {% for submission in submissions %}
     <tr id="submission_{{ submission.pk }}">
         <td><a class="res_tipsy_enable" style="font-weight:bold" href="{{ submission.tx_resource.get_absolute_url }}">{{ submission.tx_resource }}</a></td>
-        <td>{{ submission.tx_language }}</td>
         <td>{{ submission.old_string }}</td>
         <td>{{ submission.tx_translation.string }}</td>
         <td>{{ submission.tx_translation.user }}</td>
