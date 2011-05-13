@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-05-12 12:07+0200\n"
+"POT-Creation-Date: 2011-05-13 15:19+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,126 +17,174 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: admin.py:12 templates/submissions.html:38
+#: admin.py:21 templates/submissions.html:60
 msgid "Resource"
 msgstr ""
 
+#: models.py:30
+msgid "New"
+msgstr ""
+
+#: models.py:31
+msgid "Validated"
+msgstr ""
+
+#: models.py:32
+msgid "Submited to VCS"
+msgstr ""
+
 #: models.py:33
+msgid "Failed"
+msgstr ""
+
+#: models.py:61
 msgid "Transifex project"
 msgstr ""
 
-#: models.py:34 models.py:146
+#: models.py:62 models.py:217
 msgid "TX Project"
 msgstr ""
 
-#: models.py:36
+#: models.py:64
 msgid "The source language for this project"
 msgstr ""
 
-#: models.py:37
+#: models.py:65
 msgid "TX Source language"
 msgstr ""
 
-#: models.py:39
+#: models.py:67
 msgid "Choose the VCS type"
 msgstr ""
 
-#: models.py:40
+#: models.py:68
 msgid "VCS Backend"
 msgstr ""
 
-#: models.py:42
+#: models.py:70
 msgid "RW checkout URL"
 msgstr ""
 
-#: models.py:43
+#: models.py:71
 msgid "VCS URL"
 msgstr ""
 
-#: models.py:45
-msgid "Location of the project's checkout"
+#: models.py:74
+msgid "The project will be checkout in this directory in its own directory."
 msgstr ""
 
-#: models.py:46
+#: models.py:75
 msgid "VCS Checkout"
 msgstr ""
 
-#: models.py:95 models.py:103
+#: models.py:78
+msgid "Header template for PO files"
+msgstr ""
+
+#: models.py:79
+msgid "VCS Header"
+msgstr ""
+
+#: models.py:143 models.py:151
 msgid "VCS Project"
 msgstr ""
 
-#: models.py:101 models.py:150
+#: models.py:149 models.py:222 models.py:253
 msgid "TX Resource"
 msgstr ""
 
-#: models.py:105
+#: models.py:153
 msgid "VCS Source language file"
 msgstr ""
 
-#: models.py:107
+#: models.py:155
 msgid "VCS Language map"
 msgstr ""
 
-#: models.py:125 models.py:142
+#: models.py:196 models.py:213
 msgid "VCS Resource"
 msgstr ""
 
-#: models.py:131
+#: models.py:202
 msgid "TX Translation"
 msgstr ""
 
-#: models.py:133
+#: models.py:204
 msgid "Added"
 msgstr ""
 
-#: models.py:135
+#: models.py:206
 msgid "Old translation"
 msgstr ""
 
-#: models.py:138
+#: models.py:209
 msgid "VCS State"
 msgstr ""
 
-#: models.py:140
+#: models.py:211
 msgid "VCS Action"
 msgstr ""
 
-#: models.py:154
+#: models.py:227 models.py:255
 msgid "TX Language"
 msgstr ""
 
-#: models.py:160
+#: models.py:232
+msgid "TX Translator"
+msgstr ""
+
+#: models.py:244
 msgid "VCS Submission"
+msgstr ""
+
+#: models.py:246
+msgid "Can see available submissions"
+msgstr ""
+
+#: models.py:256 models.py:286 models.py:287
+msgid "VCS History"
+msgstr ""
+
+#: views.py:30
+msgid "All languages"
+msgstr ""
+
+#: views.py:32
+msgid "All projects"
+msgstr ""
+
+#: views.py:34
+msgid "All resources"
+msgstr ""
+
+#: views.py:36
+msgid "All translators"
 msgstr ""
 
 #: templates/submissions.html:4
 msgid "Pending submissions"
 msgstr ""
 
-#: templates/submissions.html:39
-msgid "Language"
-msgstr ""
-
-#: templates/submissions.html:40
+#: templates/submissions.html:61
 msgid "Old string"
 msgstr ""
 
-#: templates/submissions.html:41
+#: templates/submissions.html:62
 msgid "New string"
 msgstr ""
 
-#: templates/submissions.html:42
-msgid "User"
+#: templates/submissions.html:63
+msgid "Translator"
 msgstr ""
 
-#: templates/submissions.html:43
+#: templates/submissions.html:64
 msgid "Date"
 msgstr ""
 
-#: templates/submissions.html:44
+#: templates/submissions.html:65
 msgid "State"
 msgstr ""
 
-#: templates/submissions.html:59
+#: templates/submissions.html:79
 msgid "Validate ?"
 msgstr ""
