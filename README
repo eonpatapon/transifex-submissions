@@ -34,13 +34,13 @@ SUBMISSIONS_VCS_CHECKOUT_DIR = '/path/to/dir/'
     The absolute path to the directory where the checkouts lives
     This is the default path for all VCS projects which can be altered
 
-SUBMISSIONS_TX_VALIDATION = True or False (default)
+SUBMISSIONS_VALIDATION = True or False (default)
     Add a validation step to the workflow
     New translation must be valided on Transifex Submission url
     For validating translations, the user must have the txsubmissions.change_vcssubmission
     permission
 
-SUBMISSIONS_TX_HEADER_TPL
+SUBMISSIONS_HEADER_TPL
     The default template for PO files
     Default template :
     #
@@ -51,7 +51,7 @@ SUBMISSIONS_TX_HEADER_TPL
     #
     This default template can be customized for every project in the django admin
 
-SUBMISSIONS_TX_ORGANIZATION = "SOME ORGANIZATION"
+SUBMISSIONS_ORGANIZATION = "SOME ORGANIZATION"
     The name of the organization that can be used in the header template
 
 == Setup ==
