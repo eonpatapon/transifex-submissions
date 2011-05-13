@@ -13,6 +13,7 @@ import codecs
 from subprocess import check_output, CalledProcessError
 from datetime import datetime
 from sets import Set
+import logging
 
 from django.conf import settings
 from django.db import models
@@ -22,6 +23,8 @@ from django.utils.translation import ugettext_lazy as _
 from transifex.resources.models import Resource, SourceEntity, Translation
 from transifex.languages.models import Language
 from transifex.projects.models import Project
+
+from txsubmissions.utils import RunError, run
 
 VCS_SUBMISSION_STATES = (
     ('new', 'new'),
@@ -38,9 +41,9 @@ VCS_CHECKOUT_DIR = getattr(settings, 'SUBMISSIONS_VCS_CHECKOUT_DIR')
 TX_USER = getattr(settings, 'SUBMISSIONS_TX_USER')
 TX_PASS = getattr(settings, 'SUBMISSIONS_TX_PASS')
 TX_HOST = getattr(settings, 'SUBMISSIONS_TX_HOST')
-TX_VALIDATION = getattr(settings, 'SUBMISSIONS_TX_VALIDATION', False)
-TX_ORGANIZATION = getattr(settings, 'SUBMISSIONS_TX_ORGANIZATION', '')
-TX_HEADER_TPL = getattr(settings, 'SUBMISSIONS_TX_HEADER_TPL',
+VALIDATION = getattr(settings, 'SUBMISSIONS_VALIDATION', False)
+ORGANIZATION = getattr(settings, 'SUBMISSIONS_ORGANIZATION', '')
+HEADER_TPL = getattr(settings, 'SUBMISSIONS_HEADER_TPL',
 """
 #
 # <project>
@@ -49,6 +52,8 @@ TX_HEADER_TPL = getattr(settings, 'SUBMISSIONS_TX_HEADER_TPL',
 # This file is distributed under the same license as the <project> package.
 #
 """)
+
+log = logging.getLogger('txsubmissions')
 
 class VCSProject(models.Model):
     """ Link a Transifex project to some VCS repo """
@@ -64,10 +69,11 @@ class VCSProject(models.Model):
     vcs_url = models.CharField(max_length=255,
         help_text=_("RW checkout URL"),
         verbose_name=_("VCS URL"))
-    vcs_checkout = models.CharField(max_length=255, default=VCS_CHECKOUT_DIR,
-        help_text=_("Location of the project's checkout"),
+    vcs_checkout = models.CharField(max_length=255,
+        default=VCS_CHECKOUT_DIR,
+        help_text=_("The project will be checkout in this directory in its own directory."),
         verbose_name=_("VCS Checkout"))
-    vcs_header = models.TextField(default=TX_HEADER_TPL,
+    vcs_header = models.TextField(default=HEADER_TPL,
         blank=True, null=True,
         help_text=_("Header template for PO files"),
         verbose_name=_("VCS Header"))
@@ -88,10 +94,16 @@ class VCSProject(models.Model):
         self.repo = backend(self.vcs_checkout, self.tx_project.slug, self.vcs_url)
 
     def checkout(self):
-        """ Checkout or update the project """
+        """ Checkout localy the project """
         if not getattr(self, 'repo', None):
             self.init_repo()
         self.repo.checkout()
+
+    def update(self):
+        """ Update the local checkout """
+        if not getattr(self, 'repo', None):
+            self.init_repo()
+        self.repo.update()
 
     def commit(self, file):
         """ Commit file in the VCS """
@@ -99,14 +111,14 @@ class VCSProject(models.Model):
             self.init_repo()
         self.repo.commit(file)
 
-    def init_client(self):
+    def init_tx_client(self):
         """ Initialize Transifex client for VCS project """
-        if not os.path.exists(os.path.join(self.destdir(), '.tx')):
+        if not os.path.exists(os.path.join(self.destdir(), '.tx', 'config')):
             command = ['tx', 'init', '--host', TX_HOST, '--user', TX_USER,
                        '--pass', TX_PASS]
-            print check_output(command, cwd=self.destdir())
+            run(command, **{'cwd': self.destdir()})
 
-    def init_client_resources(self):
+    def init_tx_client_resources(self):
         """ Initialize Transifex client resources """
         resources = VCSResource.objects.filter(vcs_project=self.pk)
         for resource in resources:
@@ -115,12 +127,12 @@ class VCSProject(models.Model):
                        '-s', self.tx_source_language.code,
                        '-f', resource.vcs_source_language_file,
                        u"%s" % resource.vcs_language_map ]
-            print check_output(command, cwd=self.destdir())
+            run(command, **{'cwd': self.destdir()})
 
     def get_header(self):
         """ Return a generated header for the project """
         header = self.vcs_header
-        header = header.replace('<organization>', TX_ORGANIZATION)
+        header = header.replace('<organization>', ORGANIZATION)
         header = header.replace('<year>', datetime.now().strftime("%Y"))
         header = header.replace('<project>', self.tx_project.name)
         header = header.replace('<description>', self.tx_project.description)
@@ -150,7 +162,7 @@ class VCSResource(models.Model):
         command = ['tx', 'pull', '-f', '-r',
                    '%s.%s' % (self.vcs_project.tx_project.slug, self.tx_resource.slug),
                    '-l', language.code]
-        print check_output(command, cwd=self.vcs_project.destdir())
+        run(command, **{'cwd': self.vcs_project.destdir()})
 
     def commit(self, language, submissions):
         """ Commit the PO file in the VCS """
@@ -286,7 +298,7 @@ pre_save.connect(add_submission, sender=Translation)
 def default_state():
     """ Returns the default state that should be used
         for submitting new translations """
-    if TX_VALIDATION:
+    if VALIDATION:
         return VCS_SUBMISSION_STATES[1][0]
     else:
         return VCS_SUBMISSION_STATES[0][0]
