@@ -17,7 +17,7 @@ import logging
 
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_save
 from django.utils.translation import ugettext_lazy as _
 
 from transifex.resources.models import Resource, SourceEntity, Translation
@@ -288,7 +288,7 @@ class VCSHistory(models.Model):
 
 
 # Listen to new translations
-def add_submission(sender, **kwargs):
+def prepare_submission(sender, **kwargs):
     """ Add new translations made on Transifex
         to the VCSSubmission model """
     translation = kwargs['instance']
@@ -297,15 +297,34 @@ def add_submission(sender, **kwargs):
         r = VCSResource.objects.get(tx_resource=translation.source_entity.resource)
         try:
             sub = VCSSubmission.objects.get(tx_translation=translation)
+            log.debug("Submission already exists")
         except VCSSubmission.DoesNotExist:
-            sub = VCSSubmission(tx_translation=translation, vcs_resource=r)
+            sub = VCSSubmission(vcs_resource=r)
+            log.debug("Submission does not exists")
         # get the old string since model has not been saved yet
-        sub.old_string = Translation.objects.get(pk=translation.pk).string
-        sub.save()
+        try:
+            sub.old_string = Translation.objects.get(pk=translation.pk).string
+        except Translation.DoesNotExist:
+            sub.old_string = ""
+        # store submission instance in current translation instance
+        # submission will be saved once the translation is saved
+        translation.submission = sub
     except VCSResource.DoesNotExist:
         # we don't want to the translation
+        log.debug("VCSResource doesn't exists. Don't save submission.")
         pass
-pre_save.connect(add_submission, sender=Translation)
+pre_save.connect(prepare_submission, sender=Translation)
+
+def add_submission(sender, **kwargs):
+    translation = kwargs['instance']
+    # check if there is a submission to
+    # save for the current translation instance
+    if getattr(translation, 'submission', False):
+        sub = translation.submission
+        sub.tx_translation=translation
+        sub.save()
+        log.debug("Submission saved")
+post_save.connect(add_submission, sender=Translation)
 
 
 def default_state():
